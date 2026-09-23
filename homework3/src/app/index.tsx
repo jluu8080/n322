@@ -10,9 +10,13 @@ import {
   View,
 } from "react-native";
 
+//Icon Imports
 import { Ionicons } from "@expo/vector-icons";
 import Entypo from "@expo/vector-icons/Entypo";
+// import Entypo from '@expo/vector-icons/Entypo';
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 
+//Foundational Imports
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,7 +26,13 @@ export default function HomeScreen() {
   //value, function
   const [item, setItem] = useState("");
   const [tasks, setTasks] = useState<string[]>([]);
+
   const [errorState, setShowError] = useState(false);
+
+  //Either store a number or nothing at all
+  const [editState, setEditState] = useState<number | null>(null);
+
+  const [editText, setEditText] = useState("");
 
   // const isWeb = Platform.OS === "web";
   // const isMobileDevice = Platform.OS ===  "ios" || Platform.OS === 'android';
@@ -60,7 +70,26 @@ export default function HomeScreen() {
 
   //Edit Tasks
   function editItem(index: number) {
-    console.log(tasks[index]);
+    setEditState(index);
+    setEditText(tasks[index]);
+  }
+
+  //Exit Edit for an Item
+  function exitEdit(index: number) {
+    setEditState(null);
+  }
+
+  //Save Edit
+  function saveEdit(index: number) {
+    //Makes a copy
+    const newTasks = [...tasks];
+
+    //At the index passed, set the edited Text in which is trimmed of spaces
+    newTasks[index] = editText.trim();
+
+    //Sets the new copy of tasks
+    setTasks(newTasks);
+    setEditState(null);
   }
 
   return (
@@ -93,16 +122,52 @@ export default function HomeScreen() {
           renderItem={({ item, index }) => (
             <View style={styles.taskItem}>
               {/* Task */}
-              <Text style={styles.taskText}>{item}</Text>
+              {/* <Text style={styles.taskText}>{item}</Text> */}
+
+              {editState === index ? (
+                <TextInput
+                  style={styles.editInput}
+                  value={editText}
+                  onChangeText={setEditText}
+                  //As this is being changed aka texting, it will set item at the top in the const area. It will constantly rewrite item as setItem is being changed.
+                />
+              ) : (
+                <Text style={styles.taskText}>{item}</Text>
+              )}
 
               <View style={styles.taskButtons}>
-                <Pressable onPress={() => deleteItem(index)}>
-                  <Ionicons name="trash" size={24} color="red" />
-                </Pressable>
+                {/* If editState is true */}
+                {editState === index ? (
+                  <>
+                    <View style={styles.editButtons}>
+                      <Pressable onPress={() => saveEdit(index)}>
+                        <FontAwesome6
+                          name="square-check"
+                          size={28}
+                          color="green"
+                        />
+                      </Pressable>
 
-                <Pressable onPress={() => editItem(index)}>
-                  <Entypo name="pencil" size={24} color="black" />
-                </Pressable>
+                      <Pressable
+                        style={styles.exitEditBtn}
+                        onPress={() => exitEdit(index)}
+                      >
+                        <Entypo name="squared-cross" size={30} color="red" />
+                      </Pressable>
+                    </View>
+                  </>
+                ) : (
+                  // If editState is false
+                  <>
+                    <Pressable onPress={() => editItem(index)}>
+                      <Entypo name="pencil" size={28} color="black" />
+                    </Pressable>
+
+                    <Pressable onPress={() => deleteItem(index)}>
+                      <Ionicons name="trash" size={28} color="red" />
+                    </Pressable>
+                  </>
+                )}
               </View>
             </View>
           )}
@@ -149,6 +214,14 @@ const styles = StyleSheet.create({
     width: "100%",
     marginTop: 20,
     marginBottom: 20,
+  },
+
+  editInput: {
+    borderWidth: 1,
+    borderColor: "#999",
+    borderRadius: 5,
+    padding: 12,
+    width: "50%",
   },
 
   // Add Item Button
@@ -203,9 +276,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     // backgroundColor:"green",
   },
-  // deleteText: {
-  //   color: "lightred",
-  //   fontWeight: "bold",
-  //   paddingLeft: 15,
-  // },
+
+  editButtons: {
+    width: 55,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+
+  exitEditBtn: {
+    marginTop: -1,
+  },
 });
